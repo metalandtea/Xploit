@@ -1,0 +1,37 @@
+// decrypt [file|string] [multi?]
+
+//Variables
+
+computer = get_shell.host_computer
+file_path = "/root/Xploit"
+
+if len(params) == 0 then
+    exit("decrypt [file|string] (multi?)")
+end if
+
+if len(params) == 2 then
+    is_multi = params[1]
+else
+    is_multi = false
+end if
+
+//Functions
+decrypt = function(multi)
+    if multi == false then
+        decipher(target)
+        exit("Finished")
+    end if
+end function
+
+
+//Main
+target = param[0]
+if typeof(target) == "string" then
+    temp_target = touch(file_path, "target.txt")
+    temp_target.set_content(target)
+    target = temp_target
+end if
+
+decrypt(target)
+
+//Main
