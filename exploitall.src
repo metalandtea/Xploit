@@ -1,0 +1,101 @@
+//libs
+
+metax = include_lib("/lib/metaxploit.so")
+
+//Starting exploits
+
+if not metax then
+    exit("Error: metaxploit not found")
+end if
+
+//File
+
+shell = get_shell()
+computer = shell.host_computer
+
+exploit_file = computer.File("/root/Xploit/Vulnerabilities.txt")
+shells_file = computer.File("/root/Xploit/ScannedShells.txt")
+
+shells_file.set_content("")
+
+//Exploit Function
+
+exploit = function(ip, port, mem, value)
+    //print(port)
+    //print(ip)
+    net_session = net_use(metax, ip, to_int(port))
+
+    if not net_session then
+        return "NET SESSION FAILED"
+    end if
+
+    meta_lib = dump_lib(net_session)
+
+    if not meta_lib then
+        return "META LIB FAILED"
+    end if
+
+    result = overflow(meta_lib, mem, value)
+
+    if not result or typeof(result) == "file" then
+        return "OVERFLOW FAILED"
+    end if
+
+    print(typeof(result))
+
+        if typeof(result) == "shell" then
+            shells_data = shells_file.get_content
+            shells_file.set_content(shells_data + char(10) + str(ip) + " " + str(port) + " " + mem + " " + value)
+            return "COPIED SHELL DATA"
+
+        else if typeof(result) == "computer" then
+            root_path = "/etc/passwd"
+            root = result.File(root_path)
+
+            if root != null then
+                contents = root.get_content
+
+                if contents == null then
+                    return null
+                else
+                    print(contents)
+                end if 
+        
+            home_folder = result.File("/home")
+            users = home_folder.get_folders
+            for user in users
+                print(user.path)
+            end for
+        
+        else if typeof(result) == "number" then
+            print("NEEDS OPTIONAL ARGUMENT")
+        end if
+end function
+
+
+//Main
+lines = exploit_file.get_content.split(char(10))
+    //print(lines)
+
+//remove end empty split
+empty_line_ind = len(lines) - 1
+lines.remove(empty_line_ind)
+print(lines)
+
+for line in lines
+
+    words = line.split(" ")
+
+    if len(words) < 4 then
+        exit("Process Completed")
+    end if
+    
+    //variable assignment
+    _ip = words[0]
+    _port = words[1]
+    _mem = words[2]
+    _value = words[3]
+
+    exp_result = exploit(_ip, _port, _mem, _value)
+    print(exp_result)
+end for
