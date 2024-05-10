@@ -1,0 +1,77 @@
+//Libraries
+metaxploit = include_lib("/lib/metaxploit.so")
+
+//Info and param check
+
+if len(params) < 4 and params[0] != "?" then
+	exit("shell [ip] [port] [memory_address] [value]")
+	end if
+
+if params[0] == "?" then
+	print("\n")
+	print("httpshell [ip] [port] [memory_address] [value]\n")
+	print("-------------------------------------- \n")
+	print("creates a shell from port \n")
+	exit("--------------------------------------")
+	end if
+
+//Variables
+
+_ip = params[0]
+_port = to_int(params[1])
+_memory = params[2]
+_value = params[3]
+
+//checks
+if not metaxploit then
+	exit("Error: metaxploit not found")
+	end if
+
+//Main
+
+net_session = metaxploit.net_use(_ip, _port)
+if not net_session then
+	print(net_session)
+	exit("Error: net session unsuccesful")
+	end if
+	
+meta_lib = dump_lib(net_session)
+result = meta_lib.overflow(_memory, _value)
+
+if not result then
+	exit("Error: no result found")
+	end if
+if typeof(result) == "shell" then
+	result.start_terminal
+
+else if typeof(result) == "computer" then
+	print("found computer: looking for root pass...\n")
+
+	root_path = "/etc/passwd"
+	root = result.File(root_path)
+
+	if root != null then
+		contents = root.get_content
+
+		if contents == null then
+			print("Not high enough permissions\n")
+		else
+			print(contents)
+		end if
+	
+	print("Getting user folders...")
+	home_folder = result.File("/home")
+	users = home_folder.get_folders
+		
+	for user in users
+		print(user.path)
+	end for
+
+	else
+		exit("Error: Access denied(probably)")
+	end if
+
+else
+	exit("Error: shell not found, got: "+result)
+
+end if
